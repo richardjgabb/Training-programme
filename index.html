@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sub-1:40 Half Marathon Plan</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f4f7f6; color: #333; line-height: 1.6; padding: 20px; }
+        h1 { text-align: center; color: #2c3e50; }
+        .container { max-width: 900px; margin: 0 auto; }
+        .week-block { background: #fff; margin-bottom: 20px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .session { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; transition: all 0.3s ease; }
+        .session:last-child { border-bottom: none; }
+        .date { font-weight: bold; color: #7f8c8d; min-width: 120px; }
+        .details { flex-grow: 1; padding-left: 20px; }
+        .type { font-weight: bold; text-transform: uppercase; font-size: 0.8em; color: #3498db; }
+        
+        /* Dynamic States */
+        .past { opacity: 0.3; filter: grayscale(100%); }
+        .next { border: 2px solid #27ae60; background-color: #f0fff4; transform: scale(1.02); z-index: 10; position: relative; }
+        .next .type { color: #27ae60; }
+        
+        .pace-key { background: #2c3e50; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9em; }
+        @media (max-width: 600px) { .session { flex-direction: column; } .date { margin-bottom: 5px; } }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Half Marathon PB Plan (May 10)</h1>
+    
+    <div class="pace-key">
+        <strong>Treadmill Speed Key:</strong><br>
+        Interval (I): 14.5 km/h | Threshold (T): 13.5 km/h | Goal Race Pace (GRP): 12.7 km/h | Easy (E): 10.5 km/h
+    </div>
+
+    <div id="program-container"></div>
+</div>
+
+<script>
+    // Configuration: Start date is March 1, 2026 (Sunday of Week 1)
+    const startDate = new Date(2026, 2, 1); // Months are 0-indexed in JS
+    const today = new Date(); // Uses current system date
+
+    const scheduleTemplate = [
+        { week: 1, runs: [
+            { dayOffset: 2, type: "Speed (I)", desc: "8 x 1m 39s @ 14.5 km/h (90s rest)" },
+            { dayOffset: 4, type: "Tempo (GRP)", desc: "23 min 30s @ 12.7 km/h" },
+            { dayOffset: 6, type: "Long (E)", desc: "63 min @ 10.5 km/h" }
+        ]},
+        { week: 2, runs: [
+            { dayOffset: 2, type: "Speed (I)", desc: "5 x 3m 18s @ 14.5 km/h (3m rest)" },
+            { dayOffset: 4, type: "Tempo (T)", desc: "29 min 30s @ 13.2 km/h" },
+            { dayOffset: 6, type: "Long (E)", desc: "74 min @ 10.5 km/h" }
+        ]},
+        { week: 3, runs: [
+            { dayOffset: 2, type: "Speed (I)", desc: "10 x 1m 38s @ 14.7 km/h (90s rest)" },
+            { dayOffset: 4, type: "Tempo (T)", desc: "22 min 15s @ 13.5 km/h" },
+            { dayOffset: 6, type: "Long (E)", desc: "83 min @ 10.5 km/h" }
+        ]},
+        { week: 4, runs: [
+            { dayOffset: 2, type: "Speed (I)", desc: "5 x 4m 08s @ 14.5 km/h (4m rest)" },
+            { dayOffset: 4, type: "Tempo (GRP)", desc: "38 min @ 12.7 km/h" },
+            { dayOffset: 6, type: "Long (E)", desc: "91 min @ 10.5 km/h" }
+        ]},
+        { week: 5, runs: [
+            { dayOffset: 2, type: "Recovery (I)", desc: "6 x 1m 39s @ 14.5 km/h (2m rest)" },
+            { dayOffset: 4, type: "Easy (E)", desc: "28 min @ 10.5 km/h" },
+            { dayOffset: 6, type: "Long (E)", desc: "57 min @ 10.5 km/h" }
+        ]},
+        { week: 6, runs: [
+            { dayOffset: 2, type: "Speed (I)", desc: "6 x 3m 18s @ 14.5 km/h (3m rest)" },
+            { dayOffset: 4, type: "Tempo (T)", desc: "36 min 30s @ 13.2 km/h" },
+            { dayOffset: 6, type: "Long (E)", desc: "103 min @ 10.5 km/h" }
+        ]},
+        { week: 7, runs: [
+            { dayOffset: 2, type: "Tempo (T)", desc: "3 x 7m 06s @ 13.5 km/h (3m rest)" },
+            { dayOffset: 4, type: "Tempo (GRP)", desc: "47 min @ 12.7 km/h" },
+            { dayOffset: 6, type: "Long (E)", desc: "111 min @ 10.5 km/h" }
+        ]},
+        { week: 8, runs: [
+            { dayOffset: 2, type: "Speed (I)", desc: "4 x 4m 58s @ 14.5 km/h (4m rest)" },
+            { dayOffset: 4, type: "Tempo (T)", desc: "29 min 30s @ 13.2 km/h" },
+            { dayOffset: 6, type: "Long (E)", desc: "120 min @ 10.5 km/h (Peak)" }
+        ]},
+        { week: 9, runs: [
+            { dayOffset: 2, type: "Speed (I)", desc: "8 x 1m 38s @ 14.7 km/h (2m rest)" },
+            { dayOffset: 4, type: "Tempo (GRP)", desc: "23 min 30s @ 12.7 km/h" },
+            { dayOffset: 6, type: "Long (E)", desc: "57 min @ 10.5 km/h" }
+        ]},
+        { week: 10, runs: [
+            { dayOffset: 2, type: "Easy (E)", desc: "4 x 2 min @ 11.0 km/h (2m rest)" },
+            { dayOffset: 5, type: "Shakeout", desc: "17 min @ 10.5 km/h" },
+            { dayOffset: 6, type: "RACE DAY", desc: "13.1 Miles - Sub 1:40 Goal!" }
+        ]}
+    ];
+
+    function renderProgram() {
+        const container = document.getElementById('program-container');
+        let nextSessionIdentified = false;
+
+        scheduleTemplate.forEach(weekData => {
+            const weekEl = document.createElement('div');
+            weekEl.className = 'week-block';
+            weekEl.innerHTML = `<h3>Week ${weekData.week}</h3>`;
+
+            weekData.runs.forEach(run => {
+                const runDate = new Date(startDate);
+                runDate.setDate(startDate.getDate() + ((weekData.week - 1) * 7) + run.dayOffset);
+                
+                const sessionEl = document.createElement('div');
+                sessionEl.className = 'session';
+
+                // Check date status
+                const isPast = runDate < today && runDate.toDateString() !== today.toDateString();
+                const isToday = runDate.toDateString() === today.toDateString();
+                
+                if (isPast) {
+                    sessionEl.classList.add('past');
+                } else if (!nextSessionIdentified && runDate >= today) {
+                    sessionEl.classList.add('next');
+                    nextSessionIdentified = true;
+                }
+
+                sessionEl.innerHTML = `
+                    <div class="date">${runDate.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}</div>
+                    <div class="details">
+                        <span class="type">${run.type}</span><br>
+                        ${run.desc}
+                    </div>
+                `;
+                weekEl.appendChild(sessionEl);
+            });
+            container.appendChild(weekEl);
+        });
+    }
+
+    renderProgram();
+</script>
+
+</body>
+</html>
